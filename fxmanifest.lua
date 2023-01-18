@@ -1,11 +1,7 @@
-fx_version 'adamant'
-
+fx_version 'cerulean'
 game 'gta5'
-
 lua54 'yes'
-
 description 'ESX Vehicle Shop'
-
 version '1.0'
 legacyversion '1.9.1'
 
@@ -16,15 +12,14 @@ server_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
 	'config.lua',
-	'server/main.lua'
+	'server/*.lua'
 }
 
 client_scripts {
 	'@es_extended/locale.lua',
 	'locales/*.lua',
 	'config.lua',
-	'client/utils.lua',
-	'client/main.lua'
+	'client/*.lua'
 }
 
 dependency 'es_extended'
