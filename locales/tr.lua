@@ -1,14 +1,14 @@
 Locales['tr'] = {
   -- global menus
   ['not_enough_in_society']   = 'bu yüzden ~r~o öğeden yeterince yokciety!',
-  ['player_cannot_hold']      = "envanterinizde yeterli boş alanınız yok',
+  ['player_cannot_hold']      = 'envanterinizde yeterli boş alanınız yok',
   ['vehicle_belongs']         = '%s plakalı araç artık size ait',
   ['broke_company']           = 'şirkette yeterli paran yokccount',
   ['license_missing']         = 'senin ehliyetin yok!',
   ['buy_vehicle_shop']        = '$%s karşılığında %s satın almak istiyor musunuz?',
   ['buy_vehicle']             = 'araç satın al',
   ['car_dealer']              = 'Araba satış bayiliği',
-  ['shop_awaiting_model']     = 'araç şu anda yükleniyor, lütfen bekleyin'',
+  ['shop_awaiting_model']     = 'araç şu anda yükleniyor, lütfen bekleyin',
   ['create_bill']             = 'fatura oluştur',
   ['dealer_boss']             = 'araba Satıcısı - Patron',
   ['delivered']               = 'araç bayiye teslim edildi',
@@ -20,7 +20,7 @@ Locales['tr'] = {
   ['invoice_amount']          = 'fatura tutarı',
   ['no']                      = 'hayır',
   ['yes']                     = 'evet',
-  ['no_players']              = "Yakınınızda oyuncu yok",
+  ['no_players']              = 'Yakınınızda oyuncu yok',
   ['not_enough_money']        = 'yeterli paran yok',
   ['not_rental']              = 'bu bir ~ar~kiralık araç değil',
   ['not_yours']               = 'bu araç size ait değil',
@@ -52,7 +52,7 @@ Locales['tr'] = {
   ['dealer_customers']        = 'bayi müşterileri',
   ['have_withdrawn']          = 'x%s %s çektiniz',
   ['have_deposited']          = 'x%s %s yatırdınız',
-  ['boss_actions']            = "patron eylemleri",
+  ['boss_actions']            = 'patron eylemleri',
   ['invalid_vehicle']         = 'Geçersiz araç',
 
   -- sold vehicles
