@@ -336,7 +336,7 @@ end)
 ESX.RegisterServerCallback('esx_vehicleshop:retrieveJobVehicles', function(source, cb, type)
 	local xPlayer = ESX.GetPlayerFromId(source)
 
-	MySQL.query('SELECT * FROM owned_vehicles WHERE owner = ? AND type = ? AND job = ?', {xPlayer.identifier, type, xPlayer.job.name},
+	MySQL.query('SELECT * FROM owned_vehicles WHERE type = ? AND job = ?', {type, xPlayer.job.name},
 	function(result)
 		cb(result)
 	end)
