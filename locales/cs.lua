@@ -20,6 +20,7 @@ Locales['cs'] = {
   ['invoice_amount']          = 'castka na fakture',
   ['no']                      = 'ne',
   ['yes']                     = 'ano',
+  ['cancel']                  = 'zrušení',
   ['no_players']              = 'žádní hráči poblíž tebe',
   ['not_enough_money']        = 'nemáš dostatek peněz',
   ['not_rental']              = 'tohle není ~r~půjčitelné vozidlo',

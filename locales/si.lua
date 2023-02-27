@@ -20,6 +20,7 @@ Locales['si'] = {
   ['invoice_amount'] = 'znesek na računu',
   ['no'] = 'ne',
   ["yes"] = "yes",
+  ['cancel'] = 'Cancel',
   ['no_players'] = 'v vaši bližini ni igralcev',
   ['not_enough_money'] = 'nimate dovolj denarja',
   ['not_rental'] = 'to ni vozilo za izposojo',

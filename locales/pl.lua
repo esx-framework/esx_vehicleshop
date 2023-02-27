@@ -20,6 +20,7 @@ Locales['pl'] = {
   ['invoice_amount']          = 'suma faktury',
   ['no']                      = 'nie',
   ['yes']                     = 'tak',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'brak graczy w pobliżu',
   ['not_enough_money']        = 'nie masz wystarczająco pieniędzy',
   ['not_rental']              = 'to nie jest ~r~wypożyczone auto',

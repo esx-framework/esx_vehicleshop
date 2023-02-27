@@ -20,6 +20,7 @@ Locales['sv'] = {
   ['invoice_amount']          = 'belopp att betala',
   ['no']                      = 'nej',
   ['yes']                     = 'ja',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'det finns ingen i närheten',
   ['not_enough_money']        = 'du har inte tillräckligt mycket pengar',
   ['not_rental']              = 'detta är inte ett ~r~uthyrt fordon',

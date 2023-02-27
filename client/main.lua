@@ -176,10 +176,40 @@ function OpenShopMenu()
 			title = TranslateCap('buy_vehicle_shop', vehicleData.name, ESX.Math.GroupDigits(vehicleData.price)),
 			align = 'top-left',
 			elements = {
-				{label = TranslateCap('no'),  value = 'no'},
-				{label = TranslateCap('yes'), value = 'yes'}
+				{label = TranslateCap('cancel'),  value = 'cancel'},
+				{label = TranslateCap('buy_vehicle'), value = 'buyvehicle'},
 		}}, function(data2, menu2)
-			if data2.current.value == 'yes' then
+
+			if Config.TestDrive then
+				elements[#elements + 1] = { {
+					label = TranslateCap('testdrive'),
+					value = 'testdrive' } }
+			end
+
+			if data2.current.value == 'testdrive' then
+				IsInShopMenu = false
+				menu2.close()
+				menu.close()
+				DeleteDisplayVehicleInsideShop()
+				FreezeEntityPosition(playerPed, false)
+				SetEntityVisible(playerPed, true)
+				WaitForVehicleToLoad(vehicleData)
+				ESX.Game.SpawnLocalVehicle(vehicleData.model, Config.Zones.TestDriveVehicle.Pos,
+					Config.Zones.TestDriveVehicle.Heading, function(vehicle)
+					currentDisplayVehicle = vehicle
+					TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
+					SetModelAsNoLongerNeeded(vehicleData.model)
+					Wait(60000 * Config.TestDriveVehicleTime)
+					DoScreenFadeOut(1000)
+					Wait(1000)
+					DeleteVehicle(vehicle)
+					SetEntityCoords(playerPed, Config.Zones.ShopEntering.Pos)
+					Wait(1000)
+					DoScreenFadeIn(1000)
+				end)
+			end
+			
+			if data2.current.value == 'buyvehicle' then
 				if Config.EnablePlayerManagement then
 					ESX.TriggerServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(success)
 						if success then

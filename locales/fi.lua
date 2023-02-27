@@ -20,6 +20,7 @@ Locales['fi'] = {
   ['invoice_amount']          = 'laskun summa',
   ['no']                      = 'ei',
   ['yes']                     = 'kyllä',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'ei pelaajia lähettyvillä',
   ['not_enough_money']        = 'sinulla ei ole tarpeeksi rahaa',
   ['not_rental']              = 'tämä ei ole ~r~vuokra ajoneuvo',

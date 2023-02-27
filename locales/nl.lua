@@ -20,6 +20,7 @@ Locales['nl'] = {
   ['invoice_amount']          = 'rekening bedrag',
   ['no']                      = 'nee',
   ['yes']                     = 'ja',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'er zijn geen spelers in de buurt',
   ['not_enough_money']        = 'je hebt niet genoeg geld',
   ['not_rental']              = 'dit is geen ~r~huur voertuig',

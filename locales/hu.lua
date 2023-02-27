@@ -22,6 +22,7 @@ Locales['hu'] = {
   ['invoice_amount']          = 'számla összeg',
   ['no']                      = 'Nem',
   ['yes']                     = 'Igen',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'nincs játékos a közeledben',
   ['not_enough_money']        = 'nincs elég pénzed',
   ['not_rental']              = 'ez nem ~r~bérelhetö autó',

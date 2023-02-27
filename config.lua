@@ -3,7 +3,8 @@ Config.DrawDistance               = 10
 Config.MarkerColor                = {r = 120, g = 120, b = 240}
 Config.EnablePlayerManagement     = false -- enables the actual car dealer job. You'll need esx_addonaccount, esx_billing and esx_society
 Config.ResellPercentage           = 50
-
+Config.TestDriveVehicleTime       = 1 -- Time for player to test a vehicle in minutes
+Config.TestDrive                  = true
 Config.Locale = GetConvar('esx:locale', 'en')
 
 Config.LicenseEnable = false -- require people to own drivers license when buying vehicles? Only applies if EnablePlayerManagement is disabled. Requires esx_license
@@ -61,6 +62,13 @@ Config.Zones = {
 		Pos   = vector3(-44.6, -1080.7, 25.6),
 		Size  = {x = 3.0, y = 3.0, z = 1.0},
 		Type  = 1
+	},
+
+	TestDriveVehicle = {
+		Pos   = vector3(-28.6, -1085.6, 25.5),
+		Heading = 330.0,
+		Size  = {x = 3.0, y = 3.0, z = 1.0},
+		Type  = -1
 	}
 
 }

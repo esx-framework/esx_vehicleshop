@@ -20,6 +20,7 @@ Locales['et'] = {
   ['invoice_amount']          = 'Arve kogus',
   ['no']                      = 'Ei',
   ['yes']                     = 'Jah',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'Ühtegi mängijat pole sinu ligiduses',
   ['not_enough_money']        = 'Sul pole piisavalt raha',
   ['not_rental']              = 'See pole ~r~Renditud sõiduk',

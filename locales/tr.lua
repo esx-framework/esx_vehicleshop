@@ -20,6 +20,7 @@ Locales['tr'] = {
   ['invoice_amount']          = 'fatura tutarı',
   ['no']                      = 'hayır',
   ['yes']                     = 'evet',
+  ['cancel']                  = 'Cancel',
   ['no_players']              = 'Yakınınızda oyuncu yok',
   ['not_enough_money']        = 'yeterli paran yok',
   ['not_rental']              = 'bu bir ~ar~kiralık araç değil',
