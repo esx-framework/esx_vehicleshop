@@ -28,8 +28,6 @@ end
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
-	ESX.PlayerData = xPlayer
-
 	PlayerManagement()
 	TriggerServerEvent("esx_vehicleshop:getVehiclesAndCategories")
 end)
