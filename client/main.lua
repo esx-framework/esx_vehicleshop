@@ -99,6 +99,8 @@ function OpenShopMenu()
 	local elements           = {}
 	local firstVehicleData   = nil
 	local Categories 		 = GlobalState.vehicleShop.categories 
+	local vehiclesByCategory = GlobalState.vehicleShop.vehiclesByCategory 
+
 	for i=1, #Categories, 1 do
 		local category         = Categories[i]
 		local categoryVehicles = GlobalState.vehicleShop.vehiclesByCategory[category.name]
@@ -200,7 +202,7 @@ function OpenShopMenu()
 
 		IsInShopMenu = false
 	end, function(data, menu)
-		local vehicleData = Categories[data.current.name][data.current.value + 1]
+		local vehicleData = vehiclesByCategory[data.current.name][data.current.value + 1]
 		if not IsModelInCdimage(vehicleData.model) then
 			return print(('[^3WARNING^7] Ignoring vehicle ^5%s^7 due to invalid Model'):format(vehicleData.model))
 		end

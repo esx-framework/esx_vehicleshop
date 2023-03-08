@@ -3,8 +3,13 @@ local vehicleModels = {}
 local vehiclesByCategory = {}
 
 CreateThread(function()
-	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
-	GlobalState.vehicleShop = SQLVehiclesAndCategories()
+	if Config.EnablePlayerManagement == true then 
+	    exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
+	end
+
+	GlobalState.vehicleShop = {} -- don't know why this worked for me but it stopped duplicating the vehicles xD 
+	Wait(1) -- ensure the GlobalState is resetted to default  
+	GlobalState.vehicleShop = SQLVehiclesAndCategories() 
 end)
 
 CreateThread(function()
