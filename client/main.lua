@@ -1,48 +1,31 @@
 local HasAlreadyEnteredMarker, IsInShopMenu = false, false
 local CurrentAction, CurrentActionMsg, LastZone, currentDisplayVehicle, CurrentVehicleData
-local CurrentActionData, Vehicles, Categories = {}, {}, {}
-local VehiclesByModel = {}
-local vehiclesByCategory = {}
+local CurrentActionData, Vehicles, Categories, VehiclesByModel, vehiclesByCategory, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}, {}, {}
 
-function getVehicleFromModel(model)
+local function getVehicleFromModel(model)
 	return VehiclesByModel[model]
 end
 
-function PlayerManagement()
-	if not Config.EnablePlayerManagement then
-		return
-	end
-
-	if ESX.PlayerData.job.name ~= 'cardealer' then
-		Config.Zones.ShopEntering.Type = -1
-		Config.Zones.BossActions.Type  = -1
-		Config.Zones.ResellVehicle.Type = -1
-		return
-	end
-	Config.Zones.ShopEntering.Type = 1
-
-	if ESX.PlayerData.job.grade_name == 'boss' then
-		Config.Zones.BossActions.Type = 1
-	end
-end
-
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function(xPlayer)
-	PlayerManagement()
-	TriggerServerEvent("esx_vehicleshop:getVehiclesAndCategories")
+RegisterNetEvent('esx_vehicleshop:updateTables', function()
+	Vehicles = GlobalState.vehicleShop.vehicle
+	Categories = GlobalState.vehicleShop.categories
+	VehiclesByModel = GlobalState.vehicleShop.vehiclesByModel
+	soldVehicles = GlobalState.vehicleShop.soldVehicles
+	cardealerVehicles = GlobalState.vehicleShop.cardealerVehicles
+	rentedVehicles = GlobalState.vehicleShop.rentedVehicles
 end)
 
-RegisterNetEvent('esx_vehicleshop:updateVehiclesAndCategories', function(vehicles, categories, vehiclesByModel)
-	Vehicles = vehicles
-	Categories = categories
-
-	VehiclesByModel = vehiclesByModel
+local function Init()
+	TriggerEvent('esx_vehicleshop:updateTables')
+	
+	Wait(500)
 
 	table.sort(Vehicles, function(a, b)
 		return a.name < b.name
 	end)
 
-	for _, vehicle in ipairs(Vehicles) do
+	for i = 1, #Vehicles, 1 do
+		local vehicle = Vehicles[i]
 		if IsModelInCdimage(joaat(vehicle.model)) then
 			local category = vehicle.category
 
@@ -55,11 +38,38 @@ RegisterNetEvent('esx_vehicleshop:updateVehiclesAndCategories', function(vehicle
 			print(('[^3WARNING^7] Ignoring vehicle ^5%s^7 due to invalid Model'):format(vehicle.model))
 		end
 	end
+	
+	return true
+end
+
+local function PlayerManagement()
+	if not Config.EnablePlayerManagement then
+		return true
+	end
+
+	if LocalPlayer.state.job ~= 'cardealer' then
+		Config.Zones.ShopEntering.Type = -1
+		Config.Zones.BossActions.Type  = -1
+		Config.Zones.ResellVehicle.Type = -1
+		return true
+	end
+	Config.Zones.ShopEntering.Type = 1
+
+	if ESX.PlayerData.job.grade_name == 'boss' then
+		Config.Zones.BossActions.Type = 1
+	end
+	return true
+end
+
+RegisterNetEvent('esx:playerLoaded')
+AddEventHandler('esx:playerLoaded', function(xPlayer)
+	Init()
+	PlayerManagement()
 end)
 
 RegisterNetEvent('esx:setJob', PlayerManagement)
 
-function DeleteDisplayVehicleInsideShop()
+local function DeleteDisplayVehicleInsideShop()
 	local attempt = 0
 
 	if currentDisplayVehicle and DoesEntityExist(currentDisplayVehicle) then
@@ -75,37 +85,35 @@ function DeleteDisplayVehicleInsideShop()
 	end
 end
 
-function ReturnVehicleProvider()
-	ESX.TriggerServerCallback('esx_vehicleshop:getCommercialVehicles', function(vehicles)
-		local elements = {}
+local function ReturnVehicleProvider()
+	local elements = {}
 
-		for k, v in ipairs(vehicles) do
-			local returnPrice = ESX.Math.Round(v.price * 0.75)
-			local vehicleLabel = getVehicleFromModel(v.vehicle).label
+	for k, v in ipairs(cardealerVehicles) do
+		local returnPrice = ESX.Math.Round(v.price * 0.75)
+		local vehicleLabel = getVehicleFromModel(v.vehicle).label
 
-			table.insert(elements, {
-				label = ('%s [<span style="color:orange;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(returnPrice))),
-				value = v.vehicle
-			})
-		end
+		table.insert(elements, {
+			label = ('%s [<span style="color:orange;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(returnPrice))),
+			value = v.vehicle
+		})
+	end
 
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'return_provider_menu', {
-			title    = TranslateCap('return_provider_menu'),
-			align    = 'top-left',
-			elements = elements
-		}, function(data, menu)
-			TriggerServerEvent('esx_vehicleshop:returnProvider', data.current.value)
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'return_provider_menu', {
+		title    = TranslateCap('return_provider_menu'),
+		align    = 'top-left',
+		elements = elements
+	}, function(data, menu)
+		TriggerServerEvent('esx_vehicleshop:returnProvider', data.current.value)
 
-			Wait(300)
-			menu.close()
-			ReturnVehicleProvider()
-		end, function(data, menu)
-			menu.close()
-		end)
+		Wait(300)
+		menu.close()
+		ReturnVehicleProvider()
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
-function StartShopRestriction()
+local function StartShopRestriction()
 	CreateThread(function()
 		while IsInShopMenu do
 			Wait(0)
@@ -411,62 +419,58 @@ function OpenResellerMenu()
 end
 
 function OpenPopVehicleMenu()
-	ESX.TriggerServerCallback('esx_vehicleshop:getCommercialVehicles', function(vehicles)
-		local elements = {}
+	local elements = {}
 
-		for k,v in ipairs(vehicles) do
-			local vehicleLabel = getVehicleFromModel(v.vehicle).label
+	for k,v in ipairs(cardealerVehicles) do
+		local vehicleLabel = getVehicleFromModel(v.vehicle).label
 
-			table.insert(elements, {
-				label = ('%s [<span style="color:green;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(v.price))),
-				value = v.vehicle
-			})
-		end
+		table.insert(elements, {
+			label = ('%s [<span style="color:green;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(v.price))),
+			value = v.vehicle
+		})
+	end
 
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'commercial_vehicles', {
-			title    = TranslateCap('vehicle_dealer'),
-			align    = 'top-left',
-			elements = elements
-		}, function(data, menu)
-			local model = data.current.value
-			DeleteDisplayVehicleInsideShop()
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'commercial_vehicles', {
+		title    = TranslateCap('vehicle_dealer'),
+		align    = 'top-left',
+		elements = elements
+	}, function(data, menu)
+		local model = data.current.value
+		DeleteDisplayVehicleInsideShop()
 
-			ESX.Game.SpawnVehicle(model, Config.Zones.ShopInside.Pos, Config.Zones.ShopInside.Heading, function(vehicle)
-				currentDisplayVehicle = vehicle
+		ESX.Game.SpawnVehicle(model, Config.Zones.ShopInside.Pos, Config.Zones.ShopInside.Heading, function(vehicle)
+			currentDisplayVehicle = vehicle
 
-				for i=1, #Vehicles, 1 do
-					if model == Vehicles[i].model then
-						CurrentVehicleData = Vehicles[i]
-						break
-					end
+			for i=1, #Vehicles, 1 do
+				if model == Vehicles[i].model then
+					CurrentVehicleData = Vehicles[i]
+					break
 				end
-			end)
-		end, function(data, menu)
-			menu.close()
+			end
 		end)
+	end, function(data, menu)
+		menu.close()
 	end)
 end
 
 function OpenRentedVehiclesMenu()
-	ESX.TriggerServerCallback('esx_vehicleshop:getRentedVehicles', function(vehicles)
-		local elements = {}
+	local elements = {}
 
-		for k,v in ipairs(vehicles) do
-			local vehicleLabel = getVehicleFromModel(v.name).label
+	for k,v in ipairs(rentedVehicles) do
+		local vehicleLabel = getVehicleFromModel(v.name).label
 
-			table.insert(elements, {
-				label = ('%s: %s - <span style="color:orange;">%s</span>'):format(v.playerName, vehicleLabel, v.plate),
-				value = v.name
-			})
-		end
+		table.insert(elements, {
+			label = ('%s: %s - <span style="color:orange;">%s</span>'):format(v.playerName, vehicleLabel, v.plate),
+			value = v.name
+		})
+	end
 
-		ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'rented_vehicles', {
-			title    = TranslateCap('rent_vehicle'),
-			align    = 'top-left',
-			elements = elements
-		}, nil, function(data, menu)
-			menu.close()
-		end)
+	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'rented_vehicles', {
+		title    = TranslateCap('rent_vehicle'),
+		align    = 'top-left',
+		elements = elements
+	}, nil, function(data, menu)
+		menu.close()
 	end)
 end
 
@@ -486,21 +490,20 @@ function OpenBossActionsMenu()
 			end)
 		elseif data.current.value == 'sold_vehicles' then
 
-			ESX.TriggerServerCallback('esx_vehicleshop:getSoldVehicles', function(customers)
 				local elements = {
 					head = { TranslateCap('customer_client'), TranslateCap('customer_model'), TranslateCap('customer_plate'), TranslateCap('customer_soldby'), TranslateCap('customer_date') },
 					rows = {}
 				}
 
-				for i=1, #customers, 1 do
+				for i=1, #soldVehicles, 1 do
 					table.insert(elements.rows, {
-						data = customers[i],
+						data = soldVehicles[i],
 						cols = {
-							customers[i].client,
-							customers[i].model,
-							customers[i].plate,
-							customers[i].soldby,
-							customers[i].date
+							soldVehicles[i].client,
+							soldVehicles[i].model,
+							soldVehicles[i].plate,
+							soldVehicles[i].soldby,
+							soldVehicles[i].date
 						}
 					})
 				end
@@ -510,7 +513,6 @@ function OpenBossActionsMenu()
 				end, function(data2, menu2)
 					menu2.close()
 				end)
-			end)
 		end
 
 	end, function(data, menu)
@@ -762,7 +764,7 @@ CreateThread(function()
 		end
 
 		if letSleep then
-			Wait(500)
+			Wait(1000)
 		end
 	end
 end)
@@ -815,7 +817,7 @@ CreateThread(function()
 				CurrentAction = nil
 			end
 		else
-			Wait(500)
+			Wait(1000)
 		end
 	end
 end)
