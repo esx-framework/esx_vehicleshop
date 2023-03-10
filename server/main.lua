@@ -1,10 +1,8 @@
 local categories, vehicles = {}, {}
-local vehicleModels = {}
-local vehiclesByCategory = {}
+local vehiclesByModel = {}
 
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
-	GlobalState.vehicleShop = SQLVehiclesAndCategories()
 end)
 
 CreateThread(function()
@@ -21,28 +19,33 @@ function RemoveOwnedVehicle(plate)
 	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
 end
 
+AddEventHandler('onResourceStart', function(resourceName)
+	if resourceName == GetCurrentResourceName() then
+		SQLVehiclesAndCategories()
+	end
+end)
+
 function SQLVehiclesAndCategories()
 	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
 	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
 
-	for _, vehicle in ipairs(vehicles) do
-		vehicleModels[vehicle.model] = vehicle
-		local category = vehicle.category
-		if not vehiclesByCategory[category] then
-			vehiclesByCategory[category] = {}
-		end
-		vehiclesByCategory[category][#vehiclesByCategory[category] + 1] = vehicle
+	for _, vehicle in pairs(vehicles) do
+		vehiclesByModel[vehicle.model] = vehicle
 	end
 
-	table.sort(vehicles, function(a, b)
-		return a.name < b.name
-	end)
-
-	return {vehicles = vehicles, categories = categories, vehicleModels = vehicleModels, vehiclesByCategory = vehiclesByCategory}
+	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", -1, vehicles, categories, vehiclesByModel)
 end
 
+function getVehicleFromModel(model)
+	return vehiclesByModel[model]
+end
 
-RegisterNetEvent('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, vehicleProps, model, label)
+RegisterNetEvent("esx_vehicleshop:getVehiclesAndCategories", function()
+	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", source, vehicles, categories, vehiclesByModel)
+end)
+
+RegisterNetEvent('esx_vehicleshop:setVehicleOwnedPlayerId')
+AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, vehicleProps, model, label)
 	local xPlayer, xTarget = ESX.GetPlayerFromId(source), ESX.GetPlayerFromId(playerId)
 
 	if xPlayer.job.name ~= 'cardealer' or not xTarget then
@@ -76,7 +79,8 @@ ESX.RegisterServerCallback('esx_vehicleshop:getSoldVehicles', function(source, c
 	end)
 end)
 
-RegisterNetEvent('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPrice, playerId)
+RegisterNetEvent('esx_vehicleshop:rentVehicle')
+AddEventHandler('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPrice, playerId)
 	local xPlayer, xTarget = ESX.GetPlayerFromId(source), ESX.GetPlayerFromId(playerId)
 
 	if xPlayer.job.name ~= 'cardealer' or not xTarget then
@@ -103,7 +107,8 @@ RegisterNetEvent('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPri
 	end)
 end)
 
-RegisterNetEvent('esx_vehicleshop:getStockItem', function(itemName, count)
+RegisterNetEvent('esx_vehicleshop:getStockItem')
+AddEventHandler('esx_vehicleshop:getStockItem', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.GetPlayerFromId(source)
 
@@ -126,7 +131,8 @@ RegisterNetEvent('esx_vehicleshop:getStockItem', function(itemName, count)
 	end)
 end)
 
-RegisterNetEvent('esx_vehicleshop:putStockItems', function(itemName, count)
+RegisterNetEvent('esx_vehicleshop:putStockItems')
+AddEventHandler('esx_vehicleshop:putStockItems', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.GetPlayerFromId(source)
 
@@ -145,7 +151,7 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, model, plate)
 	local xPlayer = ESX.GetPlayerFromId(source)
-	local modelPrice = GlobalState.vehicleShop.vehicleModels[model].price
+	local modelPrice = getVehicleFromModel(model).price
 
 	if modelPrice and xPlayer.getMoney() >= modelPrice then
 		xPlayer.removeMoney(modelPrice, "Vehicle Purchase")
@@ -154,11 +160,9 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, mo
 		}, function(rowsChanged)
 			xPlayer.showNotification(TranslateCap('vehicle_belongs', plate))
 			ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading,{plate = plate}, function(vehicle)
-				Wait(250)
+				Wait(100)
 				local vehicle = NetworkGetEntityFromNetworkId(vehicle)
-				if not vehicle then
-					return
-				end
+				Wait(300)
 				TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
 			end)
 			cb(true)
@@ -180,7 +184,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(sourc
 	if xPlayer.job.name ~= 'cardealer' then
 		return cb(false)
 	end
-	local modelPrice = GlobalState.vehicleShop.vehicleModels[model].price
+	local modelPrice = getVehicleFromModel(model).price
 
 	if not modelPrice then
 		return cb(false)
@@ -199,7 +203,8 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(sourc
 	end)
 end)
 
-RegisterNetEvent('esx_vehicleshop:returnProvider', function(vehicleModel)
+RegisterNetEvent('esx_vehicleshop:returnProvider')
+AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 	local xPlayer = ESX.GetPlayerFromId(source)
 
 	if xPlayer.job.name ~= 'cardealer' then
@@ -220,7 +225,7 @@ RegisterNetEvent('esx_vehicleshop:returnProvider', function(vehicleModel)
 			end
 			TriggerEvent('esx_addonaccount:getSharedAccount', 'society_cardealer', function(account)
 				local price = ESX.Math.Round(result.price * 0.75)
-				local vehicleLabel = GlobalState.vehicleShop.vehicleModels[vehicleModel].label
+				local vehicleLabel = getVehicleFromModel(vehicleModel).label
 
 				account.addMoney(price)
 				xPlayer.showNotification(TranslateCap('vehicle_sold_for', vehicleLabel, ESX.Math.GroupDigits(price)))
@@ -337,7 +342,8 @@ ESX.RegisterServerCallback('esx_vehicleshop:retrieveJobVehicles', function(sourc
 	end)
 end)
 
-RegisterNetEvent('esx_vehicleshop:setJobVehicleState', function(plate, state)
+RegisterNetEvent('esx_vehicleshop:setJobVehicleState')
+AddEventHandler('esx_vehicleshop:setJobVehicleState', function(plate, state)
 	local xPlayer = ESX.GetPlayerFromId(source)
 
 	MySQL.update('UPDATE owned_vehicles SET `stored` = ? WHERE plate = ? AND job = ?', {state, plate, xPlayer.job.name},

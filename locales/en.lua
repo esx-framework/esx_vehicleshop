@@ -54,7 +54,6 @@ Locales['en'] = {
   ['have_deposited']          = 'you have deposited x%s %s',
   ['boss_actions']            = 'boss actions',
   ['invalid_vehicle']         = 'Invalid vehicle',
-  ['no_veh_found']            = '[~r~ERROR~s~] Vehicleshop has ~b~0~s~ Vehicles stored!',
 
   -- sold vehicles
   ['boss_sold']               = 'list of sold vehicles',
