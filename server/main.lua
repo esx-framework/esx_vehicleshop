@@ -21,14 +21,14 @@ local function GetVehicles()
 end
 
 local function GetSoldVehicles()
-	soldVehicles = MySQL.query.await('SELECT client, model, plate, soldby, date FROM vehicle_sold ORDER BY DATE DESC')
+	soldVehicles = MySQL.query.await('SELECT * FROM vehicle_sold ORDER BY DATE DESC')
 	GlobalState.vehicleShop.soldVehicles = soldVehicles
 	
 	return true
 end
 
 local function GetCardealerVehicles()
-	cardealerVehicles = MySQL.query.await('SELECT id, price, vehicle FROM cardealer_vehicles ORDER BY vehicle ASC')
+	cardealerVehicles = MySQL.query.await('SELECT * FROM cardealer_vehicles ORDER BY vehicle ASC')
 	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
 	
 	return true
