@@ -1,10 +1,46 @@
 local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles = {}, {}, {}, {}, {}
 
-CreateThread(function()
-	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
-end)
+local function GetCategories()
+	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
+	GlobalState.vehicleShop.categories = categories
+
+	return true
+end
+
+local function GetVehicles()
+	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
+	
+	for _, vehicle in pairs(vehicles) do
+		vehiclesByModel[vehicle.model] = vehicle
+	end
+	
+	GlobalState.vehicleShop.vehiclesByModel = vehiclesByModel
+	
+	return true
+end
+
+local function GetSoldVehicles()
+	soldVehicles = MySQL.query.await('SELECT client, model, plate, soldby, date FROM vehicle_sold ORDER BY DATE DESC')
+	GlobalState.vehicleShop.soldVehicles = soldVehicles
+	
+	return true
+end
+
+local function GetCardealerVehicles()
+	cardealerVehicles = MySQL.query.await('SELECT id, price, vehicle FROM cardealer_vehicles ORDER BY vehicle ASC')
+	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+	
+	return true
+end
 
 CreateThread(function()
+	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
+		
+	GetCategories()
+	GetVehicles()
+	GetSoldVehicles()
+	GetCardealerVehicles()
+	
 	local char = Config.PlateLetters
 	char = char + Config.PlateNumbers
 	if Config.PlateUseSpace then char = char + 1 end
@@ -12,31 +48,13 @@ CreateThread(function()
 	if char > 8 then
 		print(('[^3WARNING^7] Character Limit Exceeded, ^5%s/8^7!'):format(char))
 	end
-		
-	SQLVehiclesAndCategories()
 end)
 
 function RemoveOwnedVehicle(plate)
 	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
 end
 
-function SQLVehiclesAndCategories()
-	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
-	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
-	soldVehicles = MySQL.query.await('SELECT client, model, plate, soldby, date FROM vehicle_sold ORDER BY DATE DESC')
-	cardealerVehicles = MySQL.query.await('SELECT price, vehicle FROM cardealer_vehicles ORDER BY vehicle ASC')
-
-	for _, vehicle in pairs(vehicles) do
-		vehiclesByModel[vehicle.model] = vehicle
-	end
-
-	GlobalState.vehicleShop.categories = categories
-	GlobalState.vehicleShop.vehiclesByModel = vehiclesByModel
-	GlobalState.vehicleShop.soldVehicles = soldVehicles
-	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
-end
-
-function getVehicleFromModel(model)
+local function getVehicleFromModel(model)
 	return vehiclesByModel[model]
 end
 
@@ -47,28 +65,33 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 	if Player(source).state.job ~= 'cardealer' or not xTarget then
 		return
 	end
+		
+	if not model then return end
 
-	MySQL.scalar('SELECT id FROM cardealer_vehicles WHERE vehicle = ?', {model},
-	function(id)
-		if not id then
-			return
+	local id = nil
+		
+	for i = 1, #cardealerVehicles, 1 do
+		local v = cardealerVehicles[i]
+		if v.model == model then
+			if not v.id then return end
+			id = v.id
+			local sqlDel = MySQL.update.await('DELETE FROM cardealer_vehicles WHERE id = ?', {id})
+			if not sqlDel then return end
+			table.remove(cardealerVehicles, i)
+			GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+			break
 		end
+	end
 
-		MySQL.update('DELETE FROM cardealer_vehicles WHERE id = ?', {id},
-		function(rowsChanged)
-			if rowsChanged == 1 then
-				MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xTarget.identifier, vehicleProps.plate, json.encode(vehicleProps)},
-				function(id)
-					xPlayer.showNotification(TranslateCap('vehicle_set_owned', vehicleProps.plate, xTarget.getName()))
-					xTarget.showNotification(TranslateCap('vehicle_belongs', vehicleProps.plate))
-				end)
-
-				MySQL.insert('INSERT INTO vehicle_sold (client, model, plate, soldby, date) VALUES (?, ?, ?, ?, ?)', {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
-				table.insert(soldVehicles, {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
-				GlobalState.vehicleShop.soldVehicles = soldVehicles
-			end
-		end)
+	MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xTarget.identifier, vehicleProps.plate, json.encode(vehicleProps)}, function(id)
+		xPlayer.showNotification(TranslateCap('vehicle_set_owned', vehicleProps.plate, xTarget.getName()))
+		xTarget.showNotification(TranslateCap('vehicle_belongs', vehicleProps.plate))
 	end)
+
+	local sqlIns = MySQL.insert.await('INSERT INTO vehicle_sold (client, model, plate, soldby, date) VALUES (?, ?, ?, ?, ?)', {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
+	if not sqlIns then return end
+	table.insert(soldVehicles, {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
+	GlobalState.vehicleShop.soldVehicles = soldVehicles
 end)
 
 RegisterNetEvent('esx_vehicleshop:rentVehicle')
