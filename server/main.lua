@@ -213,9 +213,6 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, mo
 			Wait(100)
 			local vehicle = NetworkGetEntityFromNetworkId(vehicle)
 			Wait(300)
-			DoScreenFadeOut(500)
-			while not IsScreenFadedOut() do Wait(0) end
-			DoScreenFadeIn(500)
 			TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
 		end)
 		cb(true)
