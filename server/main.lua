@@ -3,6 +3,7 @@ local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles, re
 local function GetCategories()
 	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
 	GlobalState.vehicleShop.categories = categories
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 
 	return true
 end
@@ -16,6 +17,7 @@ local function GetVehicles()
 	
 	GlobalState.vehicleShop.vehicles = vehicles
 	GlobalState.vehicleShop.vehiclesByModel = vehiclesByModel
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 	
 	return true
 end
@@ -23,6 +25,7 @@ end
 local function GetSoldVehicles()
 	soldVehicles = MySQL.query.await('SELECT * FROM vehicle_sold ORDER BY DATE DESC')
 	GlobalState.vehicleShop.soldVehicles = soldVehicles
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 	
 	return true
 end
@@ -30,6 +33,7 @@ end
 local function GetCardealerVehicles()
 	cardealerVehicles = MySQL.query.await('SELECT * FROM cardealer_vehicles ORDER BY vehicle ASC')
 	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 	
 	return true
 end
@@ -47,6 +51,7 @@ local function GetRentedVehicles()
 			}
 		end
 		GlobalState.vehicleShop.rentedVehicles = rentedVehicles
+		TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 			
 		return true
 	end)
@@ -60,6 +65,8 @@ CreateThread(function()
 	GetSoldVehicles()
 	GetCardealerVehicles()
 	GetRentedVehicles()
+		
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 	
 	local char = Config.PlateLetters
 	char = char + Config.PlateNumbers
@@ -98,6 +105,7 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 			if not sqlDel then return end
 			table.remove(cardealerVehicles, i)
 			GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+			TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 			break
 		end
 	end
@@ -111,6 +119,7 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 	if not sqlIns then return end
 	table.insert(soldVehicles, {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
 	GlobalState.vehicleShop.soldVehicles = soldVehicles
+	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 end)
 
 RegisterNetEvent('esx_vehicleshop:rentVehicle')
@@ -135,6 +144,7 @@ AddEventHandler('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPric
 			if not sqlDel then return end
 			table.remove(cardealerVehicles, i)
 			GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+			TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 			break
 		end
 	end
@@ -270,6 +280,7 @@ AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 			if not sqlDel then return end
 			table.remove(cardealerVehicles, i)
 			GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
+			TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 			break
 		end
 	end
@@ -299,6 +310,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:giveBackVehicle', function(source, c
 			if not sqlDel then return cb(false) end
 			table.remove(rentedVehicles, i)
 			GlobalState.vehicleShop.rentedVehicles = rentedVehicles
+			TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 			break
 		end
 	end
