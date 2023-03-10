@@ -1,5 +1,4 @@
-local categories, vehicles = {}, {}
-local vehiclesByModel = {}
+local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles = {}, {}, {}, {}, {}
 
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
@@ -13,42 +12,39 @@ CreateThread(function()
 	if char > 8 then
 		print(('[^3WARNING^7] Character Limit Exceeded, ^5%s/8^7!'):format(char))
 	end
+		
+	SQLVehiclesAndCategories()
 end)
 
 function RemoveOwnedVehicle(plate)
 	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
 end
 
-AddEventHandler('onResourceStart', function(resourceName)
-	if resourceName == GetCurrentResourceName() then
-		SQLVehiclesAndCategories()
-	end
-end)
-
 function SQLVehiclesAndCategories()
 	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
 	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
+	soldVehicles = MySQL.query.await('SELECT client, model, plate, soldby, date FROM vehicle_sold ORDER BY DATE DESC')
+	cardealerVehicles = MySQL.query.await('SELECT price, vehicle FROM cardealer_vehicles ORDER BY vehicle ASC')
 
 	for _, vehicle in pairs(vehicles) do
 		vehiclesByModel[vehicle.model] = vehicle
 	end
 
-	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", -1, vehicles, categories, vehiclesByModel)
+	GlobalState.vehicleShop.categories = categories
+	GlobalState.vehicleShop.vehiclesByModel = vehiclesByModel
+	GlobalState.vehicleShop.soldVehicles = soldVehicles
+	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
 end
 
 function getVehicleFromModel(model)
 	return vehiclesByModel[model]
 end
 
-RegisterNetEvent("esx_vehicleshop:getVehiclesAndCategories", function()
-	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", source, vehicles, categories, vehiclesByModel)
-end)
-
 RegisterNetEvent('esx_vehicleshop:setVehicleOwnedPlayerId')
 AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, vehicleProps, model, label)
 	local xPlayer, xTarget = ESX.GetPlayerFromId(source), ESX.GetPlayerFromId(playerId)
 
-	if xPlayer.job.name ~= 'cardealer' or not xTarget then
+	if Player(source).state.job ~= 'cardealer' or not xTarget then
 		return
 	end
 
@@ -68,14 +64,10 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 				end)
 
 				MySQL.insert('INSERT INTO vehicle_sold (client, model, plate, soldby, date) VALUES (?, ?, ?, ?, ?)', {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
+				table.insert(soldVehicles, {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
+				GlobalState.vehicleShop.soldVehicles = soldVehicles
 			end
 		end)
-	end)
-end)
-
-ESX.RegisterServerCallback('esx_vehicleshop:getSoldVehicles', function(source, cb)
-	MySQL.query('SELECT client, model, plate, soldby, date FROM vehicle_sold ORDER BY DATE DESC', function(result)
-		cb(result)
 	end)
 end)
 
@@ -153,42 +145,47 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, mo
 	local xPlayer = ESX.GetPlayerFromId(source)
 	local modelPrice = getVehicleFromModel(model).price
 
-	if modelPrice and xPlayer.getMoney() >= modelPrice then
-		xPlayer.removeMoney(modelPrice, "Vehicle Purchase")
-
-		MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xPlayer.identifier, plate, json.encode({model = joaat(model), plate = plate})
-		}, function(rowsChanged)
-			xPlayer.showNotification(TranslateCap('vehicle_belongs', plate))
-			ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading,{plate = plate}, function(vehicle)
-				Wait(100)
-				local vehicle = NetworkGetEntityFromNetworkId(vehicle)
-				Wait(300)
-				TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
-			end)
-			cb(true)
-		end)
-	else
-		cb(false)
+	if not modelPrice then
+		cb(false) 
+		return 
 	end
-end)
+		
+	if xPlayer.getMoney() < modelPrice then
+		cb(false)
+		return 
+	end
 
-ESX.RegisterServerCallback('esx_vehicleshop:getCommercialVehicles', function(source, cb)
-	MySQL.query('SELECT price, vehicle FROM cardealer_vehicles ORDER BY vehicle ASC', function(result)
-		cb(result)
+	xPlayer.removeMoney(modelPrice, "Vehicle Purchase")
+
+	MySQL.insert('INSERT INTO owned_vehicles (owner, plate, vehicle) VALUES (?, ?, ?)', {xPlayer.identifier, plate, json.encode({model = joaat(model), plate = plate})
+	}, function(rowsChanged)
+		xPlayer.showNotification(TranslateCap('vehicle_belongs', plate))
+		ESX.OneSync.SpawnVehicle(joaat(model), Config.Zones.ShopOutside.Pos, Config.Zones.ShopOutside.Heading,{plate = plate}, function(vehicle)
+			Wait(100)
+			local vehicle = NetworkGetEntityFromNetworkId(vehicle)
+			Wait(300)
+			DoScreenFadeOut(500)
+			while not IsScreenFadedOut() do Wait(0) end
+			DoScreenFadeIn(500)
+			TaskWarpPedIntoVehicle(GetPlayerPed(source), vehicle, -1)
+		end)
+		cb(true)
 	end)
 end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(source, cb, model)
 	local xPlayer = ESX.GetPlayerFromId(source)
 
-	if xPlayer.job.name ~= 'cardealer' then
+	if Player(source).state.job ~= 'cardealer' then
 		return cb(false)
 	end
+		
 	local modelPrice = getVehicleFromModel(model).price
 
 	if not modelPrice then
 		return cb(false)
 	end
+		
 	TriggerEvent('esx_addonaccount:getSharedAccount', 'society_cardealer', function(account)
 		if account.money < modelPrice then
 			return cb(false)
@@ -199,6 +196,8 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(sourc
 		MySQL.insert('INSERT INTO cardealer_vehicles (vehicle, price) VALUES (?, ?)', {model, modelPrice},
 		function(rowsChanged)
 			cb(true)
+			table.insert(cardealerVehicles, {model, modelPrice})
+			GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
 		end)
 	end)
 end)
@@ -207,9 +206,10 @@ RegisterNetEvent('esx_vehicleshop:returnProvider')
 AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 	local xPlayer = ESX.GetPlayerFromId(source)
 
-	if xPlayer.job.name ~= 'cardealer' then
+	if Player(source).state.job ~= 'cardealer' then
 		return
 	end
+		
 	MySQL.single('SELECT id, price FROM cardealer_vehicles WHERE vehicle = ?', {vehicleModel},
 	function(result)
 		if not result then
@@ -219,6 +219,7 @@ AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 		local id = result.id
 
 		MySQL.update('DELETE FROM cardealer_vehicles WHERE id = ?', {id},
+		--todo: table and globalstate update
 		function(rowsChanged)
 			if rowsChanged ~= 1 then
 				return
