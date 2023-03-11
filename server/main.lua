@@ -1,3 +1,4 @@
+local Config = Config
 local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}
 
 local function GetCategories()
@@ -117,7 +118,7 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 
 	local sqlIns = MySQL.insert.await('INSERT INTO vehicle_sold (client, model, plate, soldby, date) VALUES (?, ?, ?, ?, ?)', {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
 	if not sqlIns then return end
-	table.insert(soldVehicles, {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')})
+	soldVehicles[#soldVehicles + 1] = {xTarget.getName(), label, vehicleProps.plate, xPlayer.getName(), os.date('%Y-%m-%d %H:%M')}
 	GlobalState.vehicleShop.soldVehicles = soldVehicles
 	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 end)
