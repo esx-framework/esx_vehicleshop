@@ -303,7 +303,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:giveBackVehicle', function(source, c
 		
 	for i = 1, #rentedVehicles, 1 do
 		local v = rentedVehicles[i]
-		if v.plate = plate then
+		if v.plate == plate then
 			base_price = v.base_price
 			vehicle = v.vehicle
 			local sqlDel = MySQL.update.await('DELETE FROM rented_vehicles WHERE plate = ?', {plate})
