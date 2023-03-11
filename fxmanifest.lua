@@ -3,7 +3,7 @@ game 'gta5'
 lua54 'yes'
 description 'ESX Vehicle Shop'
 version '1.0'
-legacyversion '1.9.1'
+legacyversion '1.9.3'
 
 shared_script '@es_extended/imports.lua'
 
