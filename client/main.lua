@@ -86,45 +86,63 @@ local function DeleteDisplayVehicleInsideShop()
 end
 
 local function ReturnVehicleProvider()
-	local elements = {}
+	local elements = {
+		{
+			unselectable = true,
+			icon = "fas fa-car",
+			title = TranslateCap('car_dealer'),
+		},
+	}
 
 	for k, v in ipairs(cardealerVehicles) do
 		local returnPrice = ESX.Math.Round(v.price * 0.75)
 		local vehicleLabel = getVehicleFromModel(v.vehicle).label
 
 		table.insert(elements, {
-			label = ('%s [<span style="color:orange;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(returnPrice))),
-			value = v.vehicle
+			title = ('%s [<span style="color:orange;">%s</span>]'):format(vehicleLabel, TranslateCap('generic_shopitem', ESX.Math.GroupDigits(returnPrice))),
+			name = v.vehicle
 		})
 	end
 
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'return_provider_menu', {
-		title    = TranslateCap('return_provider_menu'),
-		align    = 'top-left',
-		elements = elements
-	}, function(data, menu)
-		TriggerServerEvent('esx_vehicleshop:returnProvider', data.current.value)
-
-		Wait(300)
-		menu.close()
+	ESX.OpenContext("right", elements, function(menu, element)
+		if not element.name then return ESX.CloseContext() end
+		TriggerServerEvent('esx_vehicleshop:returnProvider', element.name)
+		Wait(500)
+		ESX.CloseContext()
 		ReturnVehicleProvider()
-	end, function(data, menu)
-		menu.close()
+	end, function(menu)
 	end)
 end
 
 local function StartShopRestriction()
-	CreateThread(function()
-		while IsInShopMenu do
-			Wait(0)
+	while IsInShopMenu do
+		Wait(0)
 
-			DisableControlAction(0, 75,  true) -- Disable exit vehicle
-			DisableControlAction(27, 75, true) -- Disable exit vehicle
-		end
-	end)
+		DisableControlAction(0, 75,  true) -- Disable exit vehicle
+		DisableControlAction(27, 75, true) -- Disable exit vehicle
+	end
 end
 
-function OpenShopMenu()
+local function WaitForVehicleToLoad(modelHash)
+	modelHash = (type(modelHash) == 'number' and modelHash or joaat(modelHash))
+
+	if not HasModelLoaded(modelHash) then
+		RequestModel(modelHash)
+
+		BeginTextCommandBusyspinnerOn('STRING')
+		AddTextComponentSubstringPlayerName(TranslateCap('shop_awaiting_model'))
+		EndTextCommandBusyspinnerOn(4)
+
+		while not HasModelLoaded(modelHash) do
+			Wait(0)
+			DisableAllControlActions(0)
+		end
+
+		BusyspinnerOff()
+	end
+end
+
+local function OpenShopMenu()
 	if #Vehicles == 0 then
 		print('[^3ERROR^7] Vehicleshop has ^50^7 vehicles, please add some!')
 		return
@@ -132,8 +150,9 @@ function OpenShopMenu()
 
 	IsInShopMenu = true
 
-	StartShopRestriction()
+	CreateThread(StartShopRestriction)
 	ESX.UI.Menu.CloseAll()
+	ESX.CloseContext()
 
 	local playerPed = PlayerPedId()
 
@@ -270,44 +289,26 @@ function OpenShopMenu()
 	end)
 end
 
-function WaitForVehicleToLoad(modelHash)
-	modelHash = (type(modelHash) == 'number' and modelHash or joaat(modelHash))
-
-	if not HasModelLoaded(modelHash) then
-		RequestModel(modelHash)
-
-		BeginTextCommandBusyspinnerOn('STRING')
-		AddTextComponentSubstringPlayerName(TranslateCap('shop_awaiting_model'))
-		EndTextCommandBusyspinnerOn(4)
-
-		while not HasModelLoaded(modelHash) do
-			Wait(0)
-			DisableAllControlActions(0)
-		end
-
-		BusyspinnerOff()
-	end
-end
-
 function OpenResellerMenu()
 	ESX.UI.Menu.CloseAll()
+	ESX.CloseContext()
 
-	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'reseller', {
-		title    = TranslateCap('car_dealer'),
-		align    = 'top-left',
-		elements = {
-			{label = TranslateCap('buy_vehicle'),                    value = 'buy_vehicle'},
-			{label = TranslateCap('pop_vehicle'),                    value = 'pop_vehicle'},
-			{label = TranslateCap('depop_vehicle'),                  value = 'depop_vehicle'},
-			{label = TranslateCap('return_provider'),                value = 'return_provider'},
-			{label = TranslateCap('create_bill'),                    value = 'create_bill'},
-			{label = TranslateCap('get_rented_vehicles'),            value = 'get_rented_vehicles'},
-			{label = TranslateCap('set_vehicle_owner_sell'),         value = 'set_vehicle_owner_sell'},
-			{label = TranslateCap('set_vehicle_owner_rent'),         value = 'set_vehicle_owner_rent'},
-			{label = TranslateCap('deposit_stock'),                  value = 'put_stock'},
-			{label = TranslateCap('take_stock'),                     value = 'get_stock'}
-	}}, function(data, menu)
-		local action = data.current.value
+	local elements = {
+		{unselectable = true, icon = 'fas fa-car', title = TranslateCap('car_dealer')},
+		{title = TranslateCap('buy_vehicle'),                    name = 'buy_vehicle'},
+		{title = TranslateCap('pop_vehicle'),                    name = 'pop_vehicle'},
+		{title = TranslateCap('depop_vehicle'),                  name = 'depop_vehicle'},
+		{title = TranslateCap('return_provider'),                name = 'return_provider'},
+		{title = TranslateCap('create_bill'),                    name = 'create_bill'},
+		{title = TranslateCap('get_rented_vehicles'),            name = 'get_rented_vehicles'},
+		{title = TranslateCap('set_vehicle_owner_sell'),         name = 'set_vehicle_owner_sell'},
+		{title = TranslateCap('set_vehicle_owner_rent'),         name = 'set_vehicle_owner_rent'},
+		{title = TranslateCap('deposit_stock'),                  name = 'put_stock'},
+		{title = TranslateCap('take_stock'),                     name = 'get_stock'},
+	}
+
+	ESX.OpenContext('right', elements, function(menu, element)
+		local action = element.name
 
 		if Config.OxInventory and (action == 'put_stock' or action == 'get_stock') then
 			exports.ox_inventory:openInventory('stash', 'society_cardealer')
@@ -329,28 +330,22 @@ function OpenResellerMenu()
 			ReturnVehicleProvider()
 		elseif action == 'create_bill' then
 			local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer()
-
 			if closestPlayer ~= -1 and closestDistance < 3 then
-				ESX.UI.Menu.Open('dialog', GetCurrentResourceName(), 'set_vehicle_owner_sell_amount', {
-					title = TranslateCap('invoice_amount')
-				}, function(data2, menu2)
-					local amount = tonumber(data2.value)
-
-					if amount == nil then
-						ESX.ShowNotification(TranslateCap('invalid_amount'))
-					else
-						menu2.close()
-						local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer()
-
-						if closestPlayer == -1 or closestDistance > 3.0 then
-							ESX.ShowNotification(TranslateCap('no_players'))
-						else
-							TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(closestPlayer), 'society_cardealer', TranslateCap('car_dealer'), tonumber(data2.value))
+				ESX.CloseContext()
+				ESX.OpenContext('right', {{title = TranslateCap('invoice_amount'), input = true, inputType = 'number', inputValue = 0, inputMin = 0, name = 'invoice_amount'}}, function(menu2, element2)
+					if element2.name == 'invoice_amount' then
+						local amount = tonumber(element2.inputValue)
+						if amount ~= nil then
+							ESX.CloseContext()
+							local closestPlayer, closestDistance = ESX.Game.GetClosestPlayer()
+							if closestPlayer == -1 or closestDistance > 3.0 then
+								ESX.ShowNotification(TranslateCap('no_players'))
+							else
+								TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(closestPlayer), 'society_cardealer', TranslateCap('car_dealer'), amount)
+							end
 						end
 					end
-				end, function(data2, menu2)
-					menu2.close()
-				end)
+				end, function(menu) end)
 			else
 				ESX.ShowNotification(TranslateCap('no_players'))
 			end
@@ -409,9 +404,7 @@ function OpenResellerMenu()
 				ESX.ShowNotification(TranslateCap('no_current_vehicle'))
 			end
 		end
-	end, function(data, menu)
-		menu.close()
-
+	end, function(menu)
 		CurrentAction     = 'reseller_menu'
 		CurrentActionMsg  = TranslateCap('shop_menu')
 		CurrentActionData = {}
