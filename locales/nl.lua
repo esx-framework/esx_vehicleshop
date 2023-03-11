@@ -1,6 +1,6 @@
 Locales['nl'] = {
   -- global menus
-  ['not_enough_in_society']   = 'er zijn niet genoeg van ~r~deze spullen in de stad!',
+  ['not_enough_in_society']   = 'dit zit niet in de inventory van de cardealer !',
   ['player_cannot_hold']      = 'je hebt ~r~niet~s~ genoeg plaats in je inventaris!',
   ['vehicle_belongs']         = 'een voertuig met kenteken %s is nu van jou',
   ['broke_company']           = 'je bedrijf heeft niet genoeg geld in de bank',
@@ -12,12 +12,12 @@ Locales['nl'] = {
   ['create_bill']             = 'creeër rekening',
   ['dealer_boss']             = 'Voertuig verkoop - Baas',
   ['delivered']               = 'het voertuig is afgeleverd',
-  ['depop_vehicle']           = 'parkeer voertuig in de garage?',
-  ['return_provider']         = 'stuur voertuig terug naar de eigenaar?',
+  ['depop_vehicle']           = 'wil je het voertuig parkeren in de garage?',
+  ['return_provider']         = 'wil je het voertuig terugsturen naar de eigenaar ?',
   ['get_rented_vehicles']     = 'voertuigen te huur',
   ['no_current_vehicle']      = 'je hebt momenteel geen voertuig uitstaan',
   ['invalid_amount']          = 'ongeldig bedrag',
-  ['invoice_amount']          = 'rekening bedrag',
+  ['invoice_amount']          = 'factuur bedrag',
   ['no']                      = 'nee',
   ['yes']                     = 'ja',
   ['no_players']              = 'er zijn geen spelers in de buurt',
@@ -30,7 +30,7 @@ Locales['nl'] = {
   ['rent_vehicle']            = 'Auto verkoop - Voertuigen te huur',
   ['return_provider_menu']    = 'Auto verkoop - Breng voertuig terug',
   ['rental_amount']           = 'huur bedrag',
-  ['sell_menu']               = 'klik op [E] om %s te verkopen voor $%s',
+  ['sell_menu']               = 'klik op [E] om %s te verkopen voor €%s',
   ['set_vehicle_owner_rent']  = 'verhuur voertuig',
   ['set_vehicle_owner_sell']  = 'verkoop vuurtuig',
   ['shop_menu']               = 'klik op [E] om het menu te gebruiken',
@@ -56,8 +56,8 @@ Locales['nl'] = {
   ['invalid_vehicle']         = 'Onjuist voertuig',
 
   -- sold vehicles
-  ['boss_sold']               = 'lijst van verkochten voertuigen',
-  ['customer_client']         = 'klanten naam',
+  ['boss_sold']               = 'lijst van verkochte voertuigen',
+  ['customer_client']         = 'klant naam',
   ['customer_model']          = 'voertuig model',
   ['customer_plate']          = 'kenteken voertuig',
   ['customer_soldby']         = 'verkocht door',
