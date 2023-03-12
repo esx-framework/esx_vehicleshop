@@ -8,11 +8,11 @@ ESX Vehicle Shop adds an vehicle shop to the game, where employeed players can s
   * No need to download other resources
 
 * Player management (the car dealer job): billing, boss actions and more!
-  * [esx_society](https://github.com/ESX-Org/esx_society)
-  * [esx_billing](https://github.com/ESX-Org/esx_billing)
-  * [esx_addonaccount](https://github.com/ESX-Org/esx_addonaccount)
-  * [esx_addoninventory](https://github.com/ESX-Org/esx_addoninventory)
-  * [cron](https://github.com/ESX-Org/cron)
+  * [esx_society](https://github.com/esx-framework/esx_society)
+  * [esx_billing](https://github.com/esx-framework/esx_billing)
+  * [esx_addonaccount](https://github.com/esx-framework/esx_addonaccount)
+  * [esx_addoninventory](https://github.com/esx-framework/esx_addoninventory)
+  * [cron](https://github.com/esx-framework/esx_core/tree/main/%5Bcore%5D/cron)
 
 ## Download & Installation
 
