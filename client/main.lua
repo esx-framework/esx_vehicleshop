@@ -140,7 +140,8 @@ function OpenShopMenu()
 		local category         = Categories[i]
 		local categoryVehicles = vehiclesByCategory[category.name]
 		local options          = {}
-
+		if categoryVehicles == nil then goto continue end
+		
 		for j=1, #categoryVehicles, 1 do
 			local vehicle = categoryVehicles[j]
 
@@ -161,6 +162,7 @@ function OpenShopMenu()
 			max     = #Categories[i],
 			options = options
 		})
+		::continue::
 	end
 
 	ESX.UI.Menu.Open('default', GetCurrentResourceName(), 'vehicle_shop', {
