@@ -26,12 +26,12 @@ fvm install --save --folder=esx esx-org/esx_vehicleshop
 
 ```
 cd resources
-git clone https://github.com/ESX-Org/esx_vehicleshop [esx]/esx_vehicleshop
+git clone https://github.com/esx-framework/esx_vehicleshop [esx]/esx_vehicleshop
 ```
 
 ### Manually
 
-- Download https://github.com/ESX-Org/esx_vehicleshop/archive/master.zip
+- Download https://github.com/esx-framework/esx_vehicleshop/archive/refs/heads/main.zip
 - Put it in the `[esx]` directory
 
 ### Installation
