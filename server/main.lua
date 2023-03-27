@@ -1,6 +1,13 @@
 local Config = Config
 local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}
 
+CreateThread(function()
+    while true do
+        Wait(60000)
+        collectgarbage("collect")
+    end
+end)
+
 local function getCategories()
 	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
 	GlobalState.vehicleShop.categories = categories
