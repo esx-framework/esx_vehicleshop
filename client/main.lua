@@ -5,6 +5,13 @@ local CurrentActionData, Vehicles, Categories, VehiclesByModel, vehiclesByCatego
 
 local DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible = DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible
 
+CreateThread(function()
+    while true do
+        Wait(60000)
+        collectgarbage("collect")
+    end
+end)
+
 local function getVehicleFromModel(model)
 	return VehiclesByModel[model]
 end
