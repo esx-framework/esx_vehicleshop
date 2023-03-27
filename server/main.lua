@@ -1,7 +1,7 @@
 local Config = Config
 local categories, vehicles, vehiclesByModel, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}
 
-local function GetCategories()
+local function getCategories()
 	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
 	GlobalState.vehicleShop.categories = categories
 	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
@@ -9,7 +9,7 @@ local function GetCategories()
 	return true
 end
 
-local function GetVehicles()
+local function getVehicles()
 	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
 	
 	for _, vehicle in pairs(vehicles) do
@@ -23,7 +23,7 @@ local function GetVehicles()
 	return true
 end
 
-local function GetSoldVehicles()
+local function getSoldVehicles()
 	soldVehicles = MySQL.query.await('SELECT * FROM vehicle_sold ORDER BY DATE DESC')
 	GlobalState.vehicleShop.soldVehicles = soldVehicles
 	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
@@ -31,7 +31,7 @@ local function GetSoldVehicles()
 	return true
 end
 
-local function GetCardealerVehicles()
+local function getCardealerVehicles()
 	cardealerVehicles = MySQL.query.await('SELECT * FROM cardealer_vehicles ORDER BY vehicle ASC')
 	GlobalState.vehicleShop.cardealerVehicles = cardealerVehicles
 	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
@@ -39,7 +39,7 @@ local function GetCardealerVehicles()
 	return true
 end
 
-local function GetRentedVehicles()
+local function getRentedVehicles()
 	MySQL.query('SELECT * FROM rented_vehicles ORDER BY player_name ASC', function(result)
 		rentedVehicles = {}
 
@@ -61,11 +61,11 @@ end
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
 		
-	GetCategories()
-	GetVehicles()
-	GetSoldVehicles()
-	GetCardealerVehicles()
-	GetRentedVehicles()
+	getCategories()
+	getVehicles()
+	getSoldVehicles()
+	getCardealerVehicles()
+	getRentedVehicles()
 		
 	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
 	
@@ -78,7 +78,7 @@ CreateThread(function()
 	end
 end)
 
-function RemoveOwnedVehicle(plate)
+local function removeOwnedVehicle(plate)
 	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
 end
 
@@ -95,13 +95,10 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 	end
 		
 	if not model then return end
-
-	local id = nil
 		
 	for i = 1, #cardealerVehicles, 1 do
 		local v = cardealerVehicles[i]
 		if v.vehicle == model then
-			id = v.id
 			local sqlDel = MySQL.update.await('DELETE FROM cardealer_vehicles WHERE id = ?', {v.id})
 			if not sqlDel then return end
 			table.remove(cardealerVehicles, i)
@@ -133,13 +130,11 @@ AddEventHandler('esx_vehicleshop:rentVehicle', function(vehicle, plate, rentPric
 		
 	if not vehicle or not plate or not rentPrice then return end
 		
-	local id = nil
 	local price = nil
 		
 	for i = 1, #cardealerVehicles, 1 do
 		local v = cardealerVehicles[i]
 		if v.vehicle == vehicle then
-			id = v.id
 			price = v.price
 			local sqlDel = MySQL.update.await('DELETE FROM cardealer_vehicles WHERE id = ?', {v.id})
 			if not sqlDel then return end
@@ -166,10 +161,8 @@ AddEventHandler('esx_vehicleshop:getStockItem', function(itemName, count)
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_cardealer', function(inventory)
 		local item = inventory.getItem(itemName)
 
-		-- is there enough in the society?
 		if count > 0 and item.count >= count then
 
-			-- can the player carry the said amount of x item?
 			if not xPlayer.canCarryItem(itemName, count) then
 				return xPlayer.showNotification(TranslateCap('player_cannot_hold'))
 			end
@@ -231,8 +224,6 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyVehicle', function(source, cb, mo
 end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(source, cb, model)
-	local xPlayer = ESX.GetPlayerFromId(source)
-
 	if Player(source).state.job ~= 'cardealer' then
 		return cb(false)
 	end
@@ -255,7 +246,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:buyCarDealerVehicle', function(sourc
 				return
 			end
 			account.removeMoney(modelPrice)
-			GetCardealerVehicles()
+			getCardealerVehicles()
 			cb(true)
 		end)
 	end)
@@ -298,14 +289,14 @@ AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:giveBackVehicle', function(source, cb, plate)
-	local base_price, vehicle = nil, nil
+	local basePrice, vehicle = nil, nil
 		
 	if not plate then return end
 		
 	for i = 1, #rentedVehicles, 1 do
 		local v = rentedVehicles[i]
 		if v.plate == plate then
-			base_price = v.base_price
+			basePrice = v.base_price
 			vehicle = v.vehicle
 			local sqlDel = MySQL.update.await('DELETE FROM rented_vehicles WHERE plate = ?', {plate})
 			if not sqlDel then return cb(false) end
@@ -316,11 +307,11 @@ ESX.RegisterServerCallback('esx_vehicleshop:giveBackVehicle', function(source, c
 		end
 	end
 
-	local sqlIns = MySQL.insert.await('INSERT INTO cardealer_vehicles (vehicle, price) VALUES (?, ?)', {vehicle, base_price})
+	local sqlIns = MySQL.insert.await('INSERT INTO cardealer_vehicles (vehicle, price) VALUES (?, ?)', {vehicle, basePrice})
 	if not sqlIns then return cb(false) end 
-	GetCardealerVehicles()
+	getCardealerVehicles()
 
-	RemoveOwnedVehicle(plate)
+	removeOwnedVehicle(plate)
 	cb(true)
 end)
 
@@ -363,7 +354,7 @@ ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb,
 			end
 
 			xPlayer.addMoney(resellPrice, "Sold Vehicle")
-			RemoveOwnedVehicle(plate)
+			removeOwnedVehicle(plate)
 			cb(true)
 		end)
 	end
@@ -408,7 +399,7 @@ AddEventHandler('esx_vehicleshop:setJobVehicleState', function(plate, state)
 	end)
 end)
 
-function PayRent()
+local function payRent()
 	local timeStart = os.clock()
 	print('[^2INFO^7] ^5Rent Payments^7 Initiated')
 
@@ -494,9 +485,9 @@ function PayRent()
 			MySQL.prepare.await('DELETE FROM rented_vehicles WHERE owner = ? AND plate = ?', unrentals)
 		end
 			
-		GetRentedVehicles()
+		getRentedVehicles()
 		print(('[^2INFO^7] ^5Rent Payments^7 took ^5%s^7 ms to execute'):format(ESX.Math.Round((os.time() - timeStart) / 1000000, 2)))
 	end)
 end
 
-TriggerEvent('cron:runAt', 22, 00, PayRent)
+TriggerEvent('cron:runAt', 22, 00, payRent)
