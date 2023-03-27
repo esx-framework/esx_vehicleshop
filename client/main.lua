@@ -3,7 +3,7 @@ local HasAlreadyEnteredMarker, IsInShopMenu = false, false
 local CurrentAction, CurrentActionMsg, LastZone, currentDisplayVehicle, CurrentVehicleData
 local CurrentActionData, Vehicles, Categories, VehiclesByModel, vehiclesByCategory, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}, {}, {}
 
-local PlayerPedId, DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible = PlayerPedId, DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible
+local DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible = DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible
 
 local function getVehicleFromModel(model)
 	return VehiclesByModel[model]
@@ -86,18 +86,18 @@ local function PlayerManagement()
 	end
 	Config.Zones.ShopEntering.Type = 1
 
-	if ESX.PlayerData.job.grade_name == 'boss' then
+	if LocalPlayer.state.job.grade_name == 'boss' then
 		Config.Zones.BossActions.Type = 1
 	end
 	return true
 end
 
 local function loadIpl()
-	RequestIpl('shr_int') -- Load walls and floor
+	RequestIpl('shr_int')
 
 	local interiorID = 7170
 	PinInteriorInMemory(interiorID)
-	ActivateInteriorEntitySet(interiorID, 'csr_beforeMission') -- Load large window
+	ActivateInteriorEntitySet(interiorID, 'csr_beforeMission')
 	RefreshInterior(interiorID)
 end
 
@@ -195,7 +195,7 @@ local function OpenShopMenu()
 	ESX.UI.Menu.CloseAll()
 	ESX.CloseContext()
 
-	local playerPed = PlayerPedId()
+	local playerPed = ESX.PlayerData.ped
 
 	FreezeEntityPosition(playerPed, true)
 	SetEntityVisible(playerPed, false)
@@ -256,7 +256,7 @@ local function OpenShopMenu()
 							CurrentActionMsg  = TranslateCap('shop_menu')
 							CurrentActionData = {}
 
-							local playerPed = PlayerPedId()
+							local playerPed = ESX.PlayerData.ped
 							FreezeEntityPosition(playerPed, false)
 							SetEntityVisible(playerPed, true)
 							SetEntityCoords(playerPed, Config.Zones.ShopEntering.Pos)
@@ -293,7 +293,7 @@ local function OpenShopMenu()
 	end, function(data, menu)
 		menu.close()
 		DeleteDisplayVehicleInsideShop()
-		local playerPed = PlayerPedId()
+		local playerPed = ESX.PlayerData.ped
 
 		CurrentAction     = 'shop_menu'
 		CurrentActionMsg  = TranslateCap('shop_menu')
@@ -306,7 +306,7 @@ local function OpenShopMenu()
 		IsInShopMenu = false
 	end, function(data, menu)
 		local vehicleData = vehiclesByCategory[data.current.name][data.current.value + 1]
-		local playerPed   = PlayerPedId()
+		local playerPed   = ESX.PlayerData.ped
 
 		DeleteDisplayVehicleInsideShop()
 		WaitForVehicleToLoad(vehicleData.model)
@@ -658,7 +658,7 @@ local function hasEnteredMarker(zone)
 			CurrentActionData = {}
 		end
 	elseif zone == 'GiveBackVehicle' and Config.EnablePlayerManagement then
-		local playerPed = PlayerPedId()
+		local playerPed = ESX.PlayerData.ped
 
 		if IsPedInAnyVehicle(playerPed, false) then
 			local vehicle = GetVehiclePedIsIn(playerPed, false)
@@ -668,7 +668,7 @@ local function hasEnteredMarker(zone)
 			CurrentActionData = {vehicle = vehicle}
 		end
 	elseif zone == 'ResellVehicle' then
-		local playerPed = PlayerPedId()
+		local playerPed = ESX.PlayerData.ped
 
 		if IsPedSittingInAnyVehicle(playerPed) then
 			local vehicle = GetVehiclePedIsIn(playerPed, false)
@@ -720,27 +720,27 @@ local function hasExitedMarker(zone)
 end
 
 AddEventHandler('onResourceStop', function(resource)
-	if resource == GetCurrentResourceName() then
-		if IsInShopMenu then
-			ESX.UI.Menu.CloseAll()
-			ESX.CloseContext()
+	if resource ~= GetCurrentResourceName() then return end
+	if IsInShopMenu then
+		ESX.UI.Menu.CloseAll()
+		ESX.CloseContext()
 
-			local playerPed = PlayerPedId()
+		local playerPed = ESX.PlayerData.ped
 
-			FreezeEntityPosition(playerPed, false)
-			SetEntityVisible(playerPed, true)
-			SetEntityCoords(playerPed, Config.Zones.ShopEntering.Pos)
-		end
-
-		DeleteDisplayVehicleInsideShop()
+		FreezeEntityPosition(playerPed, false)
+		SetEntityVisible(playerPed, true)
+		SetEntityCoords(playerPed, Config.Zones.ShopEntering.Pos)
 	end
+
+	ESX.HideUI()
+	DeleteDisplayVehicleInsideShop()
 end)
 
 -- Enter / Exit marker events & Draw Markers
 CreateThread(function()
 	while true do
 		Wait(0)
-		local playerCoords = GetEntityCoords(PlayerPedId())
+		local playerCoords = GetEntityCoords(ESX.PlayerData.ped)
 		local isInMarker, letSleep, currentZone = false, true
 
 		for k,v in pairs(Config.Zones) do
