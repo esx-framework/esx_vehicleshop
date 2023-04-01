@@ -1,4 +1,4 @@
-Locales['sc'] = {
+Locales['zh-cn'] = {
   -- global menus
   ['not_enough_in_society']   = '很抱歉！暂无足够的~r~物品~s~项目!',
   ['player_cannot_hold']      = '很抱歉！您的背包~r~尚无足够~s~空间!',
