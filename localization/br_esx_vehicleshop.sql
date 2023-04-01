@@ -1,5 +1,3 @@
-
-
 INSERT INTO `addon_account` (name, label, shared) VALUES
 	('society_cardealer','Vendedor de carros',1)
 ;
