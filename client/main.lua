@@ -240,10 +240,10 @@ function OpenShopMenu()
 		local vehicleData = vehiclesByCategory[data.current.name][data.current.value + 1]
 		local playerPed   = PlayerPedId()
 
-		DeleteDisplayVehicleInsideShop()
 		WaitForVehicleToLoad(vehicleData.model)
 
 		ESX.Game.SpawnLocalVehicle(vehicleData.model, Config.Zones.ShopInside.Pos, Config.Zones.ShopInside.Heading, function(vehicle)
+			DeleteDisplayVehicleInsideShop()
 			currentDisplayVehicle = vehicle
 			TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 			FreezeEntityPosition(vehicle, true)
@@ -251,10 +251,10 @@ function OpenShopMenu()
 		end)
 	end)
 
-	DeleteDisplayVehicleInsideShop()
 	WaitForVehicleToLoad(firstVehicleData.model)
 
 	ESX.Game.SpawnLocalVehicle(firstVehicleData.model, Config.Zones.ShopInside.Pos, Config.Zones.ShopInside.Heading, function(vehicle)
+		DeleteDisplayVehicleInsideShop()
 		currentDisplayVehicle = vehicle
 		TaskWarpPedIntoVehicle(playerPed, vehicle, -1)
 		FreezeEntityPosition(vehicle, true)
@@ -429,9 +429,9 @@ function OpenPopVehicleMenu()
 			elements = elements
 		}, function(data, menu)
 			local model = data.current.value
-			DeleteDisplayVehicleInsideShop()
 
 			ESX.Game.SpawnVehicle(model, Config.Zones.ShopInside.Pos, Config.Zones.ShopInside.Heading, function(vehicle)
+				DeleteDisplayVehicleInsideShop()
 				currentDisplayVehicle = vehicle
 
 				for i=1, #Vehicles, 1 do
