@@ -1,41 +1,43 @@
 local NumberCharset = {}
+for i = 48, 57 do table.insert(NumberCharset, string.char(i)) end
+
 local Charset = {}
-
-for i = 48,  57 do table.insert(NumberCharset, string.char(i)) end
-
-for i = 65,  90 do table.insert(Charset, string.char(i)) end
+for i = 65, 90 do table.insert(Charset, string.char(i)) end
 for i = 97, 122 do table.insert(Charset, string.char(i)) end
 
 function GeneratePlate()
-	math.randomseed(GetGameTimer())
+    math.randomseed(GetGameTimer())
 
-	local generatedPlate = string.upper(GetRandomLetter(Config.PlateLetters) .. (Config.PlateUseSpace and ' ' or '') .. GetRandomNumber(Config.PlateNumbers))
+    local generatedPlate = ""
+    for i = 1, Config.PlateLetters do
+        generatedPlate = generatedPlate .. Charset[math.random(1, #Charset)]
+    end
 
-	local isTaken = IsPlateTaken(generatedPlate)
-	if isTaken then 
-		return GeneratePlate()
-	end
+    if Config.PlateUseSpace then
+        generatedPlate = generatedPlate .. " "
+    end
 
-	return generatedPlate
+    for i = 1, Config.PlateNumbers do
+        generatedPlate = generatedPlate .. NumberCharset[math.random(1, #NumberCharset)]
+    end
+
+    if IsPlateTaken(generatedPlate) then
+        return GeneratePlate()
+    end
+
+    return string.upper(generatedPlate)
 end
 
--- mixing async with sync tasks
 function IsPlateTaken(plate)
-	local p = promise.new()
-	
-	ESX.TriggerServerCallback('esx_vehicleshop:isPlateTaken', function(isPlateTaken)
-		p:resolve(isPlateTaken)
-	end, plate)
+    local isPlateTaken = false
 
-	return Citizen.Await(p)
-end
+    ESX.TriggerServerCallback('esx_vehicleshop:isPlateTaken', function(result)
+        isPlateTaken = result
+    end, plate)
 
-function GetRandomNumber(length)
-	Wait(0)
-	return length > 0 and GetRandomNumber(length - 1) .. NumberCharset[math.random(1, #NumberCharset)] or ''
-end
+    while isPlateTaken == false do
+        Wait(0)
+    end
 
-function GetRandomLetter(length)
-	Wait(0)
-	return length > 0 and GetRandomLetter(length - 1) .. Charset[math.random(1, #Charset)] or ''
+    return isPlateTaken
 end
