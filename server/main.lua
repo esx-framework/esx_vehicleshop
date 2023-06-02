@@ -1,5 +1,6 @@
 local categories, vehicles = {}, {}
 local vehiclesByModel = {}
+local lastTimeSell = {}
 
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
@@ -270,46 +271,50 @@ end)
 
 ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb, plate, model)
 	local xPlayer, resellPrice = ESX.GetPlayerFromId(source)
-
-	if xPlayer.job.name == 'cardealer' or not Config.EnablePlayerManagement then
-		-- calculate the resell price
-		for i=1, #vehicles, 1 do
-			if joaat(vehicles[i].model) == model then
-				resellPrice = ESX.Math.Round(vehicles[i].price / 100 * Config.ResellPercentage)
-				break
-			end
-		end
-
-		if not resellPrice then
-			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Invalid Vehicle - ^5%s^7!'):format(source, model))
-			return cb(false)
-		end
-		MySQL.single('SELECT * FROM rented_vehicles WHERE plate = ?', {plate},
-		function(result)
-			if result then -- is it a rented vehicle?
-				return cb(false) -- it is, don't let the player sell it since he doesn't own it
-			end
-			MySQL.single('SELECT * FROM owned_vehicles WHERE owner = ? AND plate = ?', {xPlayer.identifier, plate},
-			function(result)
-				if not result then -- does the owner match?
-					return
+	local timeNow = os.clock()
+	if not lastTimeSell[source] or timeNow - lastTimeSell[source] > 6 then
+		if xPlayer.job.name == 'cardealer' or not Config.EnablePlayerManagement then
+			-- calculate the resell price
+			for i = 1, #vehicles, 1 do
+				if joaat(vehicles[i].model) == model then
+					resellPrice = ESX.Math.Round(vehicles[i].price / 100 * Config.ResellPercentage)
+					break
 				end
-				local vehicle = json.decode(result.vehicle)
+			end
+			if not resellPrice then
+				print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Invalid Vehicle - ^5%s^7!'):format(source, model))
+				return cb(false)
+			end
+			MySQL.single('SELECT * FROM rented_vehicles WHERE plate = ?', { plate },
+				function(result)
+					if result then -- is it a rented vehicle?
+						return cb(false) -- it is, don't let the player sell it since he doesn't own it
+					end
+					MySQL.single('SELECT * FROM owned_vehicles WHERE owner = ? AND plate = ?',{ xPlayer.identifier, plate },function(result)
+					if not result then -- does the owner match?
+						return
+					end
+					local vehicle = json.decode(result.vehicle)
 
-				if vehicle.model ~= model then
+					if vehicle.model ~= model then
 					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Model - ^5%s^7!'):format(source, model))
-					return cb(false)
-				end
-				if vehicle.plate ~= plate then
-					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Plate - ^5%s^7!'):format(source, plate))
-					return cb(false)
-				end
-
-				xPlayer.addMoney(resellPrice, "Sold Vehicle")
-				RemoveOwnedVehicle(plate)
-				cb(true)
+						return cb(false)
+					end
+					if vehicle.plate ~= plate then
+						print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Plate - ^5%s^7!'):format(source, plate))
+						return cb(false)
+					end
+					lastTimeSell[source] = timeNow
+					xPlayer.addMoney(resellPrice, "Sold Vehicle")
+					RemoveOwnedVehicle(plate)
+					cb(true)
+				end)
 			end)
-		end)
+		end
+	else
+		print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Spam Internet Glitch - ^5%s^7!'):format(
+		source, plate))
+		return cb(false)
 	end
 end)
 
