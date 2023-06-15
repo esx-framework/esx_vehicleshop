@@ -4,7 +4,7 @@ local CurrentAction, CurrentActionMsg, LastZone, currentDisplayVehicle, CurrentV
 local CurrentActionData, Vehicles, Categories, VehiclesByModel, vehiclesByCategory, soldVehicles, cardealerVehicles, rentedVehicles = {}, {}, {}, {}, {}, {}, {}, {}
 local DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible = DoesEntityExist, NetworkRequestControlOfEntity, NetworkHasControlOfEntity, DisableControlAction, HasModelLoaded, RequestModel, DisableAllControlActions, FreezeEntityPosition, SetEntityCoords, SetEntityVisible
 
-Vehicles = GlobalState.vehicleShop.vehicle
+Vehicles = GlobalState.vehicleShop.vehicles
 Categories = GlobalState.vehicleShop.categories
 VehiclesByModel = GlobalState.vehicleShop.vehiclesByModel
 soldVehicles = GlobalState.vehicleShop.soldVehicles
@@ -12,7 +12,7 @@ cardealerVehicles = GlobalState.vehicleShop.cardealerVehicles
 rentedVehicles = GlobalState.vehicleShop.rentedVehicles
 
 AddStateBagChangeHandler('vehicleShop', 'global', function(bagName, key, value)
-    Vehicles = value.vehicle 
+    Vehicles = value.vehicles
     Categories = value.categories
     VehiclesByModel = value.vehiclesByModel 
     soldVehicles = value.soldVehicles 
