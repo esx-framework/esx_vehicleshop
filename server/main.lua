@@ -70,8 +70,6 @@ CreateThread(function()
 	getCardealerVehicles()
 	getRentedVehicles()
 		
-	TriggerClientEvent('esx_vehicleshop:updateTables', -1)
-	
 	local char = Config.PlateLetters
 	char = char + Config.PlateNumbers
 	if Config.PlateUseSpace then char = char + 1 end
