@@ -1,10 +1,9 @@
-local NumberCharset = {}
-local Charset = {}
+local NumberCharset, Charset = {}, {}
 
-for i = 48,  57 do table.insert(NumberCharset, string.char(i)) end
+for i = 48,  57 do TableInsert(NumberCharset, string.char(i)) end
 
-for i = 65,  90 do table.insert(Charset, string.char(i)) end
-for i = 97, 122 do table.insert(Charset, string.char(i)) end
+for i = 65,  90 do TableInsert(Charset, string.char(i)) end
+for i = 97, 122 do TableInsert(Charset, string.char(i)) end
 
 function GeneratePlate()
 	math.randomseed(GetGameTimer())
@@ -38,4 +37,8 @@ end
 function GetRandomLetter(length)
 	Wait(0)
 	return length > 0 and GetRandomLetter(length - 1) .. Charset[math.random(1, #Charset)] or ''
+end
+
+function TableInsert(t, v)
+	t[#t + 1] = v
 end
