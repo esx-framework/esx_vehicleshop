@@ -49,6 +49,7 @@ AddEventHandler('esx_vehicleshop:setVehicleOwnedPlayerId', function(playerId, ve
 	local xPlayer, xTarget = ESX.GetPlayerFromId(source), ESX.GetPlayerFromId(playerId)
 
 	if xPlayer.job.name ~= 'cardealer' or not xTarget then
+		print(('[^3WARNING^7] Player ^5"%s"^7 attempted to give a vehicle without the Cardealer Job!'):format(xPlayer.source))
 		return
 	end
 
@@ -111,7 +112,10 @@ RegisterNetEvent('esx_vehicleshop:getStockItem')
 AddEventHandler('esx_vehicleshop:getStockItem', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.GetPlayerFromId(source)
-
+	if xPlayer.job.name ~= 'cardealer' then
+		print(('[^3WARNING^7] Player ^5"%s"^7 attempted to take %s x %s from the Cardealer Job society inventory without the right job!'):format(xPlayer.source, count, itemName))
+		return
+	end
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_cardealer', function(inventory)
 		local item = inventory.getItem(itemName)
 
@@ -135,7 +139,6 @@ RegisterNetEvent('esx_vehicleshop:putStockItems')
 AddEventHandler('esx_vehicleshop:putStockItems', function(itemName, count)
 	local source = source
 	local xPlayer = ESX.GetPlayerFromId(source)
-
 	TriggerEvent('esx_addoninventory:getSharedInventory', 'society_cardealer', function(inventory)
 		local item = inventory.getItem(itemName)
 
