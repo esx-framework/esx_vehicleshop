@@ -1,5 +1,6 @@
 local categories, vehicles = {}, {}
 local vehiclesByModel = {}
+local antispam = {}
 
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
@@ -282,12 +283,12 @@ ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb,
 
 		if not resellPrice then
 			print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Invalid Vehicle - ^5%s^7!'):format(source, model))
-			return cb(false)
+			return cb(false, false)
 		end
 		MySQL.single('SELECT * FROM rented_vehicles WHERE plate = ?', {plate},
 		function(result)
 			if result then -- is it a rented vehicle?
-				return cb(false) -- it is, don't let the player sell it since he doesn't own it
+				return cb(false, false) -- it is, don't let the player sell it since he doesn't own it
 			end
 			MySQL.single('SELECT * FROM owned_vehicles WHERE owner = ? AND plate = ?', {xPlayer.identifier, plate},
 			function(result)
@@ -298,16 +299,23 @@ ESX.RegisterServerCallback('esx_vehicleshop:resellVehicle', function(source, cb,
 
 				if vehicle.model ~= model then
 					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Model - ^5%s^7!'):format(source, model))
-					return cb(false)
+					return cb(false, false)
 				end
 				if vehicle.plate ~= plate then
 					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Resell Vehicle With Invalid Plate - ^5%s^7!'):format(source, plate))
-					return cb(false)
+					return cb(false, false)
 				end
-
-				xPlayer.addMoney(resellPrice, "Sold Vehicle")
-				RemoveOwnedVehicle(plate)
-				cb(true)
+				if antispam[source] == nil then
+					antispam[source] = true
+					xPlayer.addMoney(resellPrice, "Sold Vehicle")
+					RemoveOwnedVehicle(plate)
+					cb(true, false)
+					Wait(5000)
+					antispam[source] = nil
+				else
+					print(('[^3WARNING^7] Player ^5%s^7 Attempted To Exploit Vehicle With Plate - ^5%s^7!'):format(source, plate))
+					cb(false, false)
+				end
 			end)
 		end)
 	end

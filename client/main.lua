@@ -802,14 +802,18 @@ CreateThread(function()
 						end
 					end, ESX.Math.Trim(GetVehicleNumberPlateText(CurrentActionData.vehicle)))
 				elseif CurrentAction == 'resell_vehicle' then
-					ESX.TriggerServerCallback('esx_vehicleshop:resellVehicle', function(vehicleSold)
-						if vehicleSold then
-							ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
-							ESX.ShowNotification(TranslateCap('vehicle_sold_for', CurrentActionData.label, ESX.Math.GroupDigits(CurrentActionData.price)))
-						else
-							ESX.ShowNotification(TranslateCap('not_yours'))
-						end
-					end, CurrentActionData.plate, CurrentActionData.model)
+					if not pressed then
+						pressed = true
+						ESX.TriggerServerCallback('esx_vehicleshop:resellVehicle', function(vehicleSold, keypressed)
+							if vehicleSold then
+								ESX.Game.DeleteVehicle(CurrentActionData.vehicle)
+								ESX.ShowNotification(TranslateCap('vehicle_sold_for', CurrentActionData.label, ESX.Math.GroupDigits(CurrentActionData.price)))
+							else
+								ESX.ShowNotification(TranslateCap('not_yours'))
+							end
+							pressed = keypressed
+						end, CurrentActionData.plate, CurrentActionData.model)
+					end
 				elseif CurrentAction == 'boss_actions_menu' then
 					OpenBossActionsMenu()
 				end
