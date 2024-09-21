@@ -225,7 +225,7 @@ AddEventHandler('esx_vehicleshop:returnProvider', function(vehicleModel)
 			end
 			TriggerEvent('esx_addonaccount:getSharedAccount', 'society_cardealer', function(account)
 				local price = ESX.Math.Round(result.price * 0.75)
-				local vehicleLabel = getVehicleFromModel(vehicleModel).label
+				local vehicleLabel = getVehicleFromModel(vehicleModel).name
 
 				account.addMoney(price)
 				xPlayer.showNotification(TranslateCap('vehicle_sold_for', vehicleLabel, ESX.Math.GroupDigits(price)))
