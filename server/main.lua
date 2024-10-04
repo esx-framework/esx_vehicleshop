@@ -1,42 +1,37 @@
 local categories, vehicles = {}, {}
 local vehiclesByModel = {}
 
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+		categories = MySQL.query.await('SELECT * FROM vehicle_categories')
+		vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
+	
+		for _, vehicle in pairs(vehicles) do
+			vehiclesByModel[vehicle.model] = vehicle
+		end
+	
+		TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", -1, vehicles, categories, vehiclesByModel)
+    end
+end)
+
 CreateThread(function()
 	exports["esx_society"]:registerSociety('cardealer', TranslateCap('car_dealer'), 'society_cardealer', 'society_cardealer', 'society_cardealer', {type = 'private'})
+
+    local charCount = Config.PlateLetters + Config.PlateNumbers
+    if Config.PlateUseSpace then
+        charCount = charCount + 1
+    end
+
+    if charCount > 8 then
+        print(('[^3WARNING^7] Character Limit Exceeded, ^5%s/8^7!'):format(charCount))
+    end
 end)
 
-CreateThread(function()
-	local char = Config.PlateLetters
-	char = char + Config.PlateNumbers
-	if Config.PlateUseSpace then char = char + 1 end
-
-	if char > 8 then
-		print(('[^3WARNING^7] Character Limit Exceeded, ^5%s/8^7!'):format(char))
-	end
-end)
-
-function RemoveOwnedVehicle(plate)
-	MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', {plate})
+local function RemoveOwnedVehicle(plate)
+    MySQL.update('DELETE FROM owned_vehicles WHERE plate = ?', { plate })
 end
 
-AddEventHandler('onResourceStart', function(resourceName)
-	if resourceName == GetCurrentResourceName() then
-		SQLVehiclesAndCategories()
-	end
-end)
-
-function SQLVehiclesAndCategories()
-	categories = MySQL.query.await('SELECT * FROM vehicle_categories')
-	vehicles = MySQL.query.await('SELECT vehicles.*, vehicle_categories.label AS categoryLabel FROM vehicles JOIN vehicle_categories ON vehicles.category = vehicle_categories.name')
-
-	for _, vehicle in pairs(vehicles) do
-		vehiclesByModel[vehicle.model] = vehicle
-	end
-
-	TriggerClientEvent("esx_vehicleshop:updateVehiclesAndCategories", -1, vehicles, categories, vehiclesByModel)
-end
-
-function getVehicleFromModel(model)
+local function getVehicleFromModel(model)
 	return vehiclesByModel[model]
 end
 
@@ -354,7 +349,7 @@ AddEventHandler('esx_vehicleshop:setJobVehicleState', function(plate, state)
 	end)
 end)
 
-function PayRent()
+local function PayRent()
 	local timeStart = os.clock()
 	print('[^2INFO^7] ^5Rent Payments^7 Initiated')
 
